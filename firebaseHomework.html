@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+
+    <meta charset="UTF-8">
+    <title>Firebase Homework</title>
+
+    <!-- Firebase Reference -->
+    <script src="https://www.gstatic.com/firebasejs/5.7.1/firebase.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+        crossorigin="anonymous">
+
+
+</head>
+
+<body>
+
+    <div class="jumbotron jumbotron-fluid p-3 mb-2 bg-primary text-white">
+            
+        <div class = "container">
+        <h1 class="display-4 text-center text-white">All Aboard!</h1>
+        <p class="lead text-center text-white">Choo Choo!</p>
+    </div>
+    </div>
+
+
+    <h2 class="font-weight-bold text-primary">Current Train Schedule</h2>
+    <div class="table-responsive">
+        <table class="table table-striped table-sm" id="schedule-table">
+            <thead>
+                <tr>
+                    <th>Train Name</th>
+                    <th>Destination</th>
+                    <th>Frequency</th>
+                    <th>Next Arrival</th>
+                    <div id="nextArrival"></div>
+                    <th>Minutes Away</th>
+                    <div id="minutesAway"></div>
+                </tr>
+            </thead>
+            <tbody id = "schedule-id">
+                <!-- <tr>
+                    <td>Test</td>
+                </tr> -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- <body background="tracks.jpeg"> -->
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="font-weight-bold text-primary">Add Train</h3>
+        </div>
+        <div class="panel-body">
+            <form>
+
+                <div class="form-group">
+                    <label for="exampleFormControlInput1">Train Name</label>
+                    <input type="term" class="form-control" id="name">
+                </div>
+                <div class="form-group">
+                    <label for="exampleFormControlInput1">Destination</label>
+                    <input type="term" class="form-control" id="destination">
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="exampleFormControlInput1">First Train Time (outputs military)</label>
+                    <input type="time" class="form-control" id="firstTrain">
+                </div>
+                <div class="form-group">
+                    <label for="exampleFormControlInput1">Frequency (min)</label>
+                    <input type="frequency" class="form-control" id="frequency">
+                </div>
+                <button type="button" id="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+    </div>
+
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery.js"></script>
+    <script src="https://cdn.jsdelivr.net/momentjs/2.12.0/moment.min.js"></script>
+
+    <!-- Script -->
+    <script>
+            // Initialize Firebase
+            var config = {
+              apiKey: "AIzaSyDWJTaqWBYDz5UtyZB5Ubs8uvPwhOscQlE",
+              authDomain: "trainschedule-15643.firebaseapp.com",
+              databaseURL: "https://trainschedule-15643.firebaseio.com",
+              projectId: "trainschedule-15643",
+              storageBucket: "trainschedule-15643.appspot.com",
+              messagingSenderId: "436165632655"
+            };
+            firebase.initializeApp(config);
+          
+
+        // Create a variable to reference the database.
+        var database = firebase.database();
+
+        // First Train of the Day is 3:00 AM
+        // Assume Train comes every 3 minutes.
+        // Assume the current time is 3:16 AM....
+        // What time would the next train be...? (Use your brain first)
+        // It would be 3:18 -- 2 minutes away
+
+        // Solved Mathematically
+        // 16 - 00 = 16
+        // 16 % 3 = 1 (Modulus is the remainder)
+        // 3 - 1 = 2 minutes away
+        // 2 + 3:16 = 3:18
+
+
+        // Capture Button Click
+        $("#submit").on("click", function (event) {
+            event.preventDefault();
+
+            // Grabbed values from text boxes
+            name = $("#name").val().trim();
+            destination = $("#destination").val().trim();
+            firstTrain = $("#firstTrain").val().trim();
+            frequency = $("#frequency").val().trim();
+            nextArrival = $("#nextArrival").val().trim();
+            minutesAway = $("#minutesAway").val().trim();
+
+            // Code for handling the push
+            database.ref().push({
+                name: name,
+                destination: destination,
+                firstTrain: firstTrain,
+                frequency: frequency,
+                nextArrival: nextArrival,
+                minutesAway: minutesAway,
+            });
+
+
+
+
+
+
+        });
+
+        // Firebase watcher .on("child_added"
+        database.ref().on("child_added", function (snapshot) {
+            // storing the snapshot.val() in a variable for convenience
+            var sv = snapshot.val();
+            // console.log(sv)
+
+            var firstTrain = moment(sv.firstTrain, "HH:mm");
+            console.log(sv.firstTrain)
+            // var frequency = "";
+            var difference = moment().diff(moment(firstTrain), "minutes");
+            console.log(moment(firstTrain), "minutes")
+
+            var remainder = difference % sv.frequency;
+            // console.log(difference, sv.frequency)
+            var minutesAway = sv.frequency - remainder;
+            // console.log(sv.frequency, remainder)
+            var nextArrival = moment().add(minutesAway, "minutes");
+            nextArrival = moment(nextArrival).format("HH:mm");
+
+
+            $("#schedule-id").append(
+                "<tr><td>" + sv.name + "</td>" + 
+                "<td>" + sv.destination + "</td>" +
+                "<td>" + sv.frequency + "</td>" +
+                "<td>" + nextArrival + "</td>" +
+                "<td>" + minutesAway + "</td></tr>" 
+
+            ) 
+
+      
+            // Console.loging the last user's data
+            // console.log(sv.name);
+            // console.log(sv.destination);
+            // console.log(sv.firstTrain);
+            // console.log(sv.frequency);
+            // console.log(sv.nextArrival);
+            // console.log(sv.minutesAway);
+            // console.log(m.format(("HH:mm")));
+
+            // sv.name = $("#name").val().trim();
+            // sv.destination = $("#destination").val().trim();
+            // sv.frequency = $("#frequency").val().trim();
+            // sv.nextArrival = $("#nextArrival").val().trim();
+            // console.log(sv.nextArrival)
+            // sv.minutesAway = $("#minutesAway").val().trim();
+
+
+            // Change the HTML to reflect
+            // $("#name").text(sv.name);
+            // $("#destination").text(sv.destination);
+            // // $("#firstTrain").text(sv.firstTrain);
+            // $("#frequency").text(sv.frequency);
+            // $("#nextArrival").text(sv.nextArrival);
+            // $("#minutesAway").text(sv.minutesAway);
+
+// var newRowItem = $("<tr><td>" + sv.name + "</td><td>" + sv.destination + "</td><td>" + sv.frequency + "</td><td>" + sv.nextArrival + "</td></tr>"  + sv.minutesAway + "</td></td>" + sv.firstTrain + "</td></tr>");
+//             $("table tbody").empty().append(newRowItem);
+//             firebase.database().ref().limitToLast(1).on("child_added", function(snapshot) {
+//             // var newRowItem = $("<tr><td>" + sv.name + "<td>" + sv.destination + "</td><td>" + sv.frequency + "</td><td>" + sv.nextArrival + "</td></tr>"  + sv.minutesAway+ "</td></tr>" + sv.firstTrain + "</td></tr>");
+//             // $("table tbody").empty().append(newRowItem);
+//             });
+
+
+
+
+            // Handle the errors
+        }, function (errorObject) {
+            console.log("Errors handled: " + errorObject.code);
+        });
+
+    </script>
+
+</body>
+
+</html>
